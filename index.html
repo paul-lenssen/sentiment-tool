@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NPS Sentiment Analyse — Vreemde Vogel</title>
+<meta name="description" content="Gratis AI-sentiment-analyse van je open NPS-antwoorden. Plak je antwoorden en zie direct de 3 dominante thema's.">
+<style>
+  :root{
+    --bg:#0A0F1E; --panel:#111831; --border:#1E2A4A;
+    --green:#00C896; --text:#E8ECF4; --muted:#8A94AD;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono',ui-monospace,Menlo,monospace;min-height:100vh;}
+  .wrap{max-width:760px;margin:0 auto;padding:48px 24px;}
+  .logo{font-size:13px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+  h1{font-size:28px;font-weight:500;margin-bottom:12px;}
+  h1 span{color:var(--green);}
+  .sub{color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:32px;}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:24px;}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;}
+  textarea{width:100%;min-height:200px;background:var(--bg);border:1px solid var(--border);border-radius:8px;
+    color:var(--text);font-family:inherit;font-size:13px;padding:14px;resize:vertical;line-height:1.6;}
+  textarea:focus{outline:none;border-color:var(--green);}
+  .hint{font-size:11px;color:var(--muted);margin-top:8px;}
+  button{background:var(--green);color:#04110C;border:none;border-radius:8px;padding:14px 28px;
+    font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;margin-top:16px;width:100%;}
+  button:hover{opacity:.9;} button:disabled{opacity:.4;cursor:wait;}
+  .results{display:none;}
+  .insight{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:12px;}
+  .insight .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  .insight .thema{font-size:15px;font-weight:500;}
+  .insight .pct{font-size:13px;color:var(--green);}
+  .insight .sent{font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+  .sent.positief{color:var(--green);} .sent.negatief{color:#FF5C7A;} .sent.gemengd{color:#E0A800;}
+  .insight .sam{font-size:13px;color:var(--muted);line-height:1.5;}
+  .upsell{background:linear-gradient(135deg,#13203F,#0E1730);border:1px solid var(--green);
+    border-radius:12px;padding:24px;text-align:center;margin-top:24px;}
+  .upsell h3{font-size:16px;margin-bottom:8px;}
+  .upsell p{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px;}
+  .upsell a{display:inline-block;background:var(--green);color:#04110C;text-decoration:none;
+    border-radius:8px;padding:12px 24px;font-size:14px;font-weight:500;}
+  .error{color:#FF5C7A;font-size:13px;margin-top:12px;display:none;}
+  .loader{display:none;text-align:center;color:var(--muted);font-size:13px;padding:20px;}
+  footer{text-align:center;font-size:11px;color:var(--muted);margin-top:40px;}
+  footer a{color:var(--green);text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">Vreemde Vogel</div>
+  <h1>NPS Sentiment <span>Analyse</span></h1>
+  <p class="sub">Plak je open NPS-antwoorden hieronder. Onze AI vindt de 3 dominante
+  thema's met sentiment — gratis. Eén antwoord per regel werkt het best.</p>
+
+  <div class="panel">
+    <label for="answers">Open antwoorden</label>
+    <textarea id="answers" placeholder="De app werkt fijn maar de klantenservice reageert traag&#10;Prijs-kwaliteit is uitstekend, blijf zeker klant&#10;Levering duurde veel te lang, erg frustrerend&#10;..."></textarea>
+    <div class="hint">Max ±15.000 tekens · je data wordt niet opgeslagen na de analyse</div>
+    <button id="analyze">Analyseer →</button>
+    <div class="error" id="error"></div>
+  </div>
+
+  <div class="loader" id="loader">AI analyseert je antwoorden…</div>
+
+  <div class="results" id="results">
+    <div class="panel">
+      <label>Top 3 thema's in jouw antwoorden</label>
+      <div id="insights"></div>
+      <div class="upsell">
+        <h3>📄 Volledig rapport nodig?</h3>
+        <p>Alle thema's, representatieve citaten per thema, algemeen sentiment
+        en concrete aanbevelingen — als downloadbaar rapport inclusief je data.</p>
+        <a href="https://vreemdevogel.gumroad.com/l/sentiment-rapport" target="_blank" rel="noopener">
+          Volledig rapport — €19,-
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Een tool van <a href="https://vreemdevogel.com" target="_blank">vreemdevogel.com</a>
+    · Bekijk ook onze <a href="https://vreemdevogel.com/#producten" target="_blank">NPS &amp; Churn templates</a>
+  </footer>
+</div>
+
+<script>
+const btn=document.getElementById('analyze');
+const ta=document.getElementById('answers');
+const err=document.getElementById('error');
+const loader=document.getElementById('loader');
+const results=document.getElementById('results');
+const insightsEl=document.getElementById('insights');
+
+btn.addEventListener('click', async ()=>{
+  err.style.display='none'; results.style.display='none';
+  const answers=ta.value.trim();
+  if(answers.length<20){
+    err.textContent='Plak minimaal een paar antwoorden (20+ tekens).';
+    err.style.display='block'; return;
+  }
+  btn.disabled=true; loader.style.display='block';
+  try{
+    const r=await fetch('/api/sentiment',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({answers})
+    });
+    const data=await r.json();
+    if(!r.ok) throw new Error(data.error||'Er ging iets mis.');
+    insightsEl.innerHTML='';
+    (data.teaser||[]).slice(0,3).forEach(t=>{
+      const div=document.createElement('div');
+      div.className='insight';
+      div.innerHTML=`
+        <div class="top"><span class="thema">${t.thema}</span>
+        <span class="pct">~${t.percentage}%</span></div>
+        <div class="sent ${t.sentiment}">${t.sentiment}</div>
+        <div class="sam">${t.samenvatting}</div>`;
+      insightsEl.appendChild(div);
+    });
+    results.style.display='block';
+  }catch(e){
+    err.textContent=e.message; err.style.display='block';
+  }finally{
+    btn.disabled=false; loader.style.display='none';
+  }
+});
+</script>
+</body>
+</html>
