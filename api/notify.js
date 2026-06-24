@@ -1,24 +1,43 @@
 // /api/notify.js — Vercel serverless function
-// Stuurt notificatiemail naar paul@vreemdevogel.com via Mandrill
-// met emailadres van gebruiker + volledig NPS rapport.
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { email, teaser, full } = req.body || {};
+  const { naam, email, teaser, full, nps } = req.body || {};
 
   if (!email || !email.includes('@')) {
     return res.status(400).json({ error: 'Ongeldig e-mailadres.' });
   }
 
   const API_KEY = process.env.MANDRILL_API_KEY;
+  const themas = full?.themas || teaser || [];
 
-  // Thema's HTML
-  const themas = (full?.themas || teaser || []);
+  // NPS sectie
+  const npsHtml = nps ? `
+    <div style="margin-bottom:20px;">
+      <div style="font-size:11px;color:#8A94AD;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">NPS Analyse</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <div style="flex:1;background:#0A0F1E;border:1px solid #1E2A4A;border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:20px;font-weight:500;color:#00C896;">${nps.promotors}%</div>
+          <div style="font-size:10px;color:#8A94AD;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">Promotors</div>
+        </div>
+        <div style="flex:1;background:#0A0F1E;border:1px solid #1E2A4A;border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:20px;font-weight:500;color:#FF5C7A;">${nps.detractors}%</div>
+          <div style="font-size:10px;color:#8A94AD;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">Detractors</div>
+        </div>
+        <div style="flex:1;background:#0A0F1E;border:1px solid #1E2A4A;border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:20px;font-weight:500;color:#E8ECF4;">${nps.score > 0 ? '+' : ''}${nps.score}</div>
+          <div style="font-size:10px;color:#8A94AD;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">NPS Score</div>
+        </div>
+      </div>
+    </div>` : '';
+
+  // Thema's
   const themasHtml = themas.map((t, i) => {
     const sentColor = t.sentiment === 'positief' ? '#00C896' : t.sentiment === 'negatief' ? '#FF5C7A' : '#E0A800';
     const citaten = (t.citaten || []).map(c => `<div style="font-size:12px;color:#8A94AD;font-style:italic;margin-top:4px;">"${c}"</div>`).join('');
+    const scoreVerdeling = t.scoreverdeling ? `<div style="font-size:11px;color:#8A94AD;margin-top:4px;">📊 ${t.scoreverdeling}</div>` : '';
     return `
       <div style="background:#0A0F1E;border:1px solid #1E2A4A;border-radius:8px;padding:14px;margin-bottom:10px;">
         <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
@@ -27,16 +46,16 @@ export default async function handler(req, res) {
         </div>
         <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:${sentColor};margin-bottom:6px;">${t.sentiment}</div>
         <div style="font-size:13px;color:#8A94AD;line-height:1.5;">${t.samenvatting}</div>
+        ${scoreVerdeling}
         ${citaten}
       </div>`;
   }).join('');
 
-  // Aanbevelingen HTML
-  const aanbevelingen = (full?.aanbevelingen || []);
-  const aanbevelingenHtml = aanbevelingen.length ? `
+  // Aanbevelingen
+  const aanbHtml = (full?.aanbevelingen || []).length ? `
     <div style="background:#13203F;border:1px solid #1E2A4A;border-radius:8px;padding:14px;margin-bottom:16px;">
-      <div style="font-size:12px;color:#8A94AD;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Aanbevelingen</div>
-      ${aanbevelingen.map((a, i) => `
+      <div style="font-size:11px;color:#8A94AD;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Aanbevelingen</div>
+      ${(full.aanbevelingen || []).map((a, i) => `
         <div style="display:flex;gap:8px;margin-bottom:8px;">
           <span style="font-size:11px;color:#00C896;flex-shrink:0;margin-top:2px;">${i + 1}.</span>
           <span style="font-size:13px;color:#8A94AD;line-height:1.5;">${a}</span>
@@ -49,21 +68,23 @@ export default async function handler(req, res) {
       <h2 style="font-size:18px;font-weight:500;margin-bottom:20px;">NPS Sentiment rapport aangevraagd</h2>
 
       <div style="background:#111831;border:1px solid #1E2A4A;border-radius:8px;padding:14px;margin-bottom:20px;">
-        <div style="font-size:11px;color:#8A94AD;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">E-mailadres gebruiker</div>
-        <div style="font-size:16px;color:#00C896;">${email}</div>
+        <div style="font-size:11px;color:#8A94AD;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Klant</div>
+        <div style="font-size:16px;color:#E8ECF4;font-weight:500;">${naam || '—'}</div>
+        <div style="font-size:14px;color:#00C896;margin-top:2px;">${email}</div>
       </div>
+
+      ${npsHtml}
 
       <div style="font-size:11px;color:#8A94AD;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">
         Volledig rapport (${themas.length} thema's)
       </div>
-
       ${themasHtml}
-      ${aanbevelingenHtml}
+      ${aanbHtml}
 
       <div style="background:#13203F;border:1px solid #00C896;border-radius:8px;padding:14px;font-size:13px;color:#8A94AD;line-height:1.6;">
         <strong style="color:#E8ECF4;">Wat nu?</strong><br>
         Zodra <strong style="color:#00C896;">${email}</strong> betaalt via Gumroad, stuur je dit rapport door.<br><br>
-        <a href="mailto:${email}" style="color:#00C896;">Mail ${email} direct →</a>
+        <a href="mailto:${email}?subject=Jouw NPS Sentiment Rapport — Vreemde Vogel" style="color:#00C896;">Mail ${naam || email} direct →</a>
       </div>
     </div>`;
 
@@ -75,7 +96,7 @@ export default async function handler(req, res) {
         key: API_KEY,
         message: {
           html,
-          subject: `NPS rapport aangevraagd — ${email}`,
+          subject: `NPS rapport aangevraagd — ${naam || email}`,
           from_email: 'info@vreemdevogel.com',
           from_name: 'Vreemde Vogel Tool',
           to: [{ email: 'paul@vreemdevogel.com', type: 'to' }],

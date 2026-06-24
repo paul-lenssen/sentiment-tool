@@ -23,6 +23,12 @@
     color:var(--text);font-family:inherit;font-size:13px;padding:14px;resize:vertical;line-height:1.6;}
   textarea:focus{outline:none;border-color:var(--green);}
   .hint{font-size:11px;color:var(--muted);margin-top:8px;}
+  .optional-section{margin-top:20px;border-top:1px solid var(--border);padding-top:20px;}
+  .optional-label{font-size:11px;color:var(--green);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+  .optional-desc{font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5;}
+  .scores-input{width:100%;min-height:80px;background:var(--bg);border:1px solid var(--border);border-radius:8px;
+    color:var(--text);font-family:inherit;font-size:13px;padding:12px;resize:vertical;line-height:1.6;}
+  .scores-input:focus{outline:none;border-color:var(--green);}
   button{background:var(--green);color:#04110C;border:none;border-radius:8px;padding:14px 28px;
     font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;margin-top:16px;width:100%;}
   button:hover{opacity:.9;} button:disabled{opacity:.4;cursor:wait;}
@@ -34,6 +40,13 @@
   .insight .sent{font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
   .sent.positief{color:var(--green);} .sent.negatief{color:#FF5C7A;} .sent.gemengd{color:#E0A800;}
   .insight .sam{font-size:13px;color:var(--muted);line-height:1.5;}
+  .nps-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+  .nps-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;}
+  .nps-card .val{font-size:22px;font-weight:500;line-height:1;}
+  .nps-card .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px;}
+  .nps-card.promotor .val{color:var(--green);}
+  .nps-card.detractor .val{color:#FF5C7A;}
+  .nps-card.score .val{color:var(--text);}
   .upsell{background:linear-gradient(135deg,#13203F,#0E1730);border:1px solid var(--green);
     border-radius:12px;padding:24px;text-align:center;margin-top:24px;display:none;}
   .upsell h3{font-size:16px;margin-bottom:8px;}
@@ -45,38 +58,25 @@
   footer{text-align:center;font-size:11px;color:var(--muted);margin-top:40px;}
   footer a{color:var(--green);text-decoration:none;}
 
-  /* Soft gate overlay */
-  .gate-overlay{
-    display:none;position:fixed;inset:0;background:rgba(10,15,30,.88);
-    backdrop-filter:blur(6px);z-index:100;align-items:center;justify-content:center;
-  }
+  /* Soft gate */
+  .gate-overlay{display:none;position:fixed;inset:0;background:rgba(10,15,30,.88);
+    backdrop-filter:blur(6px);z-index:100;align-items:center;justify-content:center;}
   .gate-overlay.visible{display:flex;}
-  .gate-box{
-    background:var(--panel);border:1px solid var(--green);border-radius:16px;
-    padding:36px 32px;max-width:420px;width:90%;text-align:center;
-  }
+  .gate-box{background:var(--panel);border:1px solid var(--green);border-radius:16px;
+    padding:36px 32px;max-width:440px;width:90%;text-align:center;}
   .gate-icon{font-size:32px;margin-bottom:16px;}
   .gate-box h2{font-size:18px;font-weight:500;margin-bottom:10px;line-height:1.4;}
   .gate-box h2 span{color:var(--green);}
-  .gate-box p{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:24px;}
-  .gate-input{
-    width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;
-    color:var(--text);font-family:inherit;font-size:13px;padding:12px 16px;
-    margin-bottom:12px;outline:none;
-  }
+  .gate-box p{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:20px;}
+  .gate-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;
+    color:var(--text);font-family:inherit;font-size:13px;padding:12px 16px;margin-bottom:10px;outline:none;}
   .gate-input:focus{border-color:var(--green);}
-  .gate-submit{
-    width:100%;background:var(--green);color:#04110C;border:none;border-radius:8px;
-    padding:13px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;
-    margin-bottom:14px;margin-top:0;
-  }
+  .gate-submit{width:100%;background:var(--green);color:#04110C;border:none;border-radius:8px;
+    padding:13px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:14px;margin-top:0;}
   .gate-submit:hover{opacity:.9;}
   .gate-submit:disabled{opacity:.4;cursor:wait;}
-  .gate-skip{
-    font-size:11px;color:var(--muted);background:none;border:none;
-    cursor:pointer;font-family:inherit;text-decoration:underline;
-    text-underline-offset:3px;width:auto;margin:0;padding:0;
-  }
+  .gate-skip{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;
+    font-family:inherit;text-decoration:underline;text-underline-offset:3px;width:auto;margin:0;padding:0;}
   .gate-skip:hover{color:var(--text);opacity:1;}
   .gate-error{color:#FF5C7A;font-size:12px;margin-bottom:10px;display:none;}
   .gate-success{color:var(--green);font-size:13px;display:none;margin-bottom:12px;}
@@ -84,30 +84,36 @@
 </head>
 <body>
 
-<!-- Soft gate overlay -->
 <div class="gate-overlay" id="gate">
   <div class="gate-box">
     <div class="gate-icon">📊</div>
     <h2>Je analyse is klaar —<br><span>ontvang het rapport per mail</span></h2>
-    <p>Vul je e-mail in en we sturen je de samenvatting toe. Geen spam, geen verplichtingen.</p>
+    <p>Vul je gegevens in en ontvang een professioneel rapport. Geen spam, geen verplichtingen.</p>
     <div class="gate-error" id="gate-error"></div>
-    <div class="gate-success" id="gate-success">✓ Gelukt! Je ontvangt de samenvatting zo in je inbox.</div>
+    <div class="gate-success" id="gate-success">✓ Gelukt! Je ontvangt het rapport zodra je betaling is bevestigd.</div>
+    <input class="gate-input" type="text" id="gate-naam" placeholder="Naam of bedrijfsnaam" autocomplete="organization">
     <input class="gate-input" type="email" id="gate-email" placeholder="jouw@email.nl" autocomplete="email">
-    <button class="gate-submit" id="gate-submit">Rapport ontvangen →</button>
-    <button class="gate-skip" id="gate-skip">Nee bedankt, toon alleen de resultaten</button>
+    <button class="gate-submit" id="gate-submit">Rapport ontvangen — €19,- →</button>
+    <button class="gate-skip" id="gate-skip">Nee bedankt, toon alleen de gratis resultaten</button>
   </div>
 </div>
 
 <div class="wrap">
   <div class="logo">Vreemde Vogel</div>
   <h1>NPS Sentiment <span>Analyse</span></h1>
-  <p class="sub">Plak je open NPS-antwoorden hieronder. Onze AI vindt de 3 dominante
-  thema's met sentiment — gratis. Eén antwoord per regel werkt het best.</p>
+  <p class="sub">Plak je open NPS-antwoorden hieronder. Onze AI vindt de 3 dominante thema's met sentiment — gratis. Voeg optioneel je NPS scores toe voor een diepere analyse.</p>
 
   <div class="panel">
     <label for="answers">Open antwoorden</label>
     <textarea id="answers" placeholder="De app werkt fijn maar de klantenservice reageert traag&#10;Prijs-kwaliteit is uitstekend, blijf zeker klant&#10;Levering duurde veel te lang, erg frustrerend&#10;..."></textarea>
     <div class="hint">Max ±15.000 tekens · je data wordt niet opgeslagen na de analyse</div>
+
+    <div class="optional-section">
+      <div class="optional-label">✦ Optioneel — NPS scores</div>
+      <div class="optional-desc">Voeg de bijbehorende scores toe (0-10, één per regel, zelfde volgorde als de antwoorden). Zo kunnen we promotors vs. detractors analyseren en scores koppelen aan thema's.</div>
+      <textarea class="scores-input" id="scores" placeholder="8&#10;9&#10;3&#10;7&#10;..."></textarea>
+    </div>
+
     <button id="analyze">Analyseer →</button>
     <div class="error" id="error"></div>
   </div>
@@ -117,12 +123,12 @@
   <div class="results" id="results">
     <div class="panel">
       <label>Top 3 thema's in jouw antwoorden</label>
+      <div id="nps-strip"></div>
       <div id="insights"></div>
       <div class="upsell" id="upsell">
         <h3>📄 Volledig rapport nodig?</h3>
-        <p>Alle thema's, representatieve citaten per thema, algemeen sentiment
-        en concrete aanbevelingen — als downloadbaar rapport inclusief je data.</p>
-        <a href="https://vreemdevogel.gumroad.com/l/sentiment-rapport" target="_blank" rel="noopener">
+        <p>Alle thema's, citaten, NPS analyse en concrete aanbevelingen — als professioneel rapport in Vreemde Vogel huisstijl.</p>
+        <a href="#" onclick="document.getElementById('gate').classList.add('visible');return false;">
           Volledig rapport — €19,-
         </a>
       </div>
@@ -138,15 +144,18 @@
 <script>
 const btn = document.getElementById('analyze');
 const ta = document.getElementById('answers');
+const scoresEl = document.getElementById('scores');
 const err = document.getElementById('error');
 const loader = document.getElementById('loader');
 const results = document.getElementById('results');
 const insightsEl = document.getElementById('insights');
 const gate = document.getElementById('gate');
 const upsell = document.getElementById('upsell');
+const npsStrip = document.getElementById('nps-strip');
 
 let lastTeaser = [];
-let lastFull = {}; // bewaar teaser voor de notificatiemail
+let lastFull = {};
+let lastNps = null;
 
 btn.addEventListener('click', async () => {
   err.style.display = 'none';
@@ -157,19 +166,36 @@ btn.addEventListener('click', async () => {
     err.style.display = 'block';
     return;
   }
+
+  // Parse optionele scores
+  const scoresRaw = scoresEl.value.trim();
+  const scores = scoresRaw ? scoresRaw.split('\n').map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n >= 0 && n <= 10) : [];
+
   btn.disabled = true;
   loader.style.display = 'block';
+
   try {
     const r = await fetch('/api/sentiment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ answers })
+      body: JSON.stringify({ answers, scores })
     });
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || 'Er ging iets mis.');
 
     lastTeaser = data.teaser || [];
     lastFull = data.full || {};
+    lastNps = data.nps || null;
+
+    // NPS strip tonen als scores aanwezig
+    npsStrip.innerHTML = '';
+    if (lastNps) {
+      npsStrip.innerHTML = `
+        <div class="nps-card promotor"><div class="val">${lastNps.promotors}%</div><div class="lbl">Promotors</div></div>
+        <div class="nps-card detractor"><div class="val">${lastNps.detractors}%</div><div class="lbl">Detractors</div></div>
+        <div class="nps-card score"><div class="val">${lastNps.score > 0 ? '+' : ''}${lastNps.score}</div><div class="lbl">NPS Score</div></div>`;
+    }
+
     insightsEl.innerHTML = '';
     lastTeaser.slice(0, 3).forEach(t => {
       const div = document.createElement('div');
@@ -183,8 +209,6 @@ btn.addEventListener('click', async () => {
     });
 
     results.style.display = 'block';
-
-    // Toon soft gate na korte vertraging
     setTimeout(() => gate.classList.add('visible'), 800);
 
   } catch (e) {
@@ -196,19 +220,17 @@ btn.addEventListener('click', async () => {
   }
 });
 
-// Gate: submit → notificatiemail naar paul@
+// Gate submit
 document.getElementById('gate-submit').addEventListener('click', async () => {
+  const naam = document.getElementById('gate-naam').value.trim();
   const email = document.getElementById('gate-email').value.trim();
   const gateErr = document.getElementById('gate-error');
   const gateSuccess = document.getElementById('gate-success');
   const gateSubmit = document.getElementById('gate-submit');
 
   gateErr.style.display = 'none';
-  if (!email || !email.includes('@')) {
-    gateErr.textContent = 'Vul een geldig e-mailadres in.';
-    gateErr.style.display = 'block';
-    return;
-  }
+  if (!naam) { gateErr.textContent = 'Vul je naam of bedrijfsnaam in.'; gateErr.style.display = 'block'; return; }
+  if (!email || !email.includes('@')) { gateErr.textContent = 'Vul een geldig e-mailadres in.'; gateErr.style.display = 'block'; return; }
 
   gateSubmit.disabled = true;
   gateSubmit.textContent = 'Bezig…';
@@ -217,13 +239,14 @@ document.getElementById('gate-submit').addEventListener('click', async () => {
     const r = await fetch('/api/notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, teaser: lastTeaser, full: lastFull })
+      body: JSON.stringify({ naam, email, teaser: lastTeaser, full: lastFull, nps: lastNps })
     });
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || 'Versturen mislukt.');
 
     gateSuccess.style.display = 'block';
     gateSubmit.style.display = 'none';
+    document.getElementById('gate-naam').style.display = 'none';
     document.getElementById('gate-email').style.display = 'none';
     document.getElementById('gate-skip').textContent = 'Sluiten';
 
@@ -236,11 +259,10 @@ document.getElementById('gate-submit').addEventListener('click', async () => {
     gateErr.textContent = e.message;
     gateErr.style.display = 'block';
     gateSubmit.disabled = false;
-    gateSubmit.textContent = 'Rapport ontvangen →';
+    gateSubmit.textContent = 'Rapport ontvangen — €19,- →';
   }
 });
 
-// Gate: skip → direct upsell tonen
 document.getElementById('gate-skip').addEventListener('click', () => {
   gate.classList.remove('visible');
   upsell.style.display = 'block';
