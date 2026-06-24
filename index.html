@@ -80,6 +80,11 @@
   .gate-skip:hover{color:var(--text);opacity:1;}
   .gate-error{color:#FF5C7A;font-size:12px;margin-bottom:10px;display:none;}
   .gate-success{color:var(--green);font-size:13px;display:none;margin-bottom:12px;}
+  .gate-pay{display:none;width:100%;background:var(--green);color:#04110C;border:none;border-radius:8px;
+    padding:13px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:14px;
+    text-decoration:none;text-align:center;}
+  .gate-pay:hover{opacity:.9;}
+  .gate-step{font-size:11px;color:var(--muted);margin-bottom:16px;display:none;line-height:1.6;}
 </style>
 </head>
 <body>
@@ -90,10 +95,12 @@
     <h2>Je analyse is klaar —<br><span>ontvang het rapport per mail</span></h2>
     <p>Vul je gegevens in en ontvang een professioneel rapport. Geen spam, geen verplichtingen.</p>
     <div class="gate-error" id="gate-error"></div>
-    <div class="gate-success" id="gate-success">✓ Gelukt! Je ontvangt het rapport zodra je betaling is bevestigd.</div>
+    <div class="gate-success" id="gate-success">✓ Gegevens ontvangen — stap 2: betaal via Gumroad.</div>
+    <div class="gate-step" id="gate-step">Je rapport wordt binnen één werkdag naar <strong id="gate-email-confirm"></strong> verstuurd na betaling.</div>
     <input class="gate-input" type="text" id="gate-naam" placeholder="Naam of bedrijfsnaam" autocomplete="organization">
     <input class="gate-input" type="email" id="gate-email" placeholder="jouw@email.nl" autocomplete="email">
-    <button class="gate-submit" id="gate-submit">Rapport ontvangen — €19,- →</button>
+    <button class="gate-submit" id="gate-submit">Stap 1 van 2 — Gegevens bevestigen →</button>
+    <a class="gate-pay" id="gate-pay" href="https://vreemdevogel.gumroad.com/l/sentiment" target="_blank" rel="noopener">Stap 2 — Betaal €19,- via Gumroad →</a>
     <button class="gate-skip" id="gate-skip">Nee bedankt, toon alleen de gratis resultaten</button>
   </div>
 </div>
@@ -129,7 +136,7 @@
         <h3>📄 Volledig rapport nodig?</h3>
         <p>Alle thema's, citaten, NPS analyse en concrete aanbevelingen — als professioneel rapport in Vreemde Vogel huisstijl.</p>
         <a href="#" onclick="document.getElementById('gate').classList.add('visible');return false;">
-          Volledig rapport — €19,-
+          Volledig rapport ontvangen — €19,-
         </a>
       </div>
     </div>
@@ -245,15 +252,13 @@ document.getElementById('gate-submit').addEventListener('click', async () => {
     if (!r.ok) throw new Error(data.error || 'Versturen mislukt.');
 
     gateSuccess.style.display = 'block';
+    document.getElementById('gate-step').style.display = 'block';
+    document.getElementById('gate-email-confirm').textContent = email;
+    document.getElementById('gate-pay').style.display = 'block';
     gateSubmit.style.display = 'none';
     document.getElementById('gate-naam').style.display = 'none';
     document.getElementById('gate-email').style.display = 'none';
     document.getElementById('gate-skip').textContent = 'Sluiten';
-
-    setTimeout(() => {
-      gate.classList.remove('visible');
-      upsell.style.display = 'block';
-    }, 2000);
 
   } catch (e) {
     gateErr.textContent = e.message;
