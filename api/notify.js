@@ -81,9 +81,16 @@ export default async function handler(req, res) {
       ${themasHtml}
       ${aanbHtml}
 
+      <div style="background:#0A0F1E;border:1px solid rgba(0,200,150,.2);border-radius:8px;padding:14px;margin-bottom:16px;">
+        <div style="font-size:11px;color:#8A94AD;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">📊 Tip om mee te sturen — cross-sell</div>
+        <div style="font-size:13px;color:#E8ECF4;margin-bottom:10px;line-height:1.6;">Wil je NPS structureel bijhouden, segmenten vergelijken en trends over tijd zien? Het <strong>NPS Model Pro</strong> Excel-template doet dit automatisch — inclusief dashboard en dummy data.</div>
+        <a href="https://vreemdevogel.gumroad.com/l/nps-model-pro" style="display:inline-block;background:#00C896;color:#04110C;text-decoration:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:500;">NPS Model Pro — €39,- →</a>
+      </div>
+
       <div style="background:#13203F;border:1px solid #00C896;border-radius:8px;padding:14px;font-size:13px;color:#8A94AD;line-height:1.6;">
         <strong style="color:#E8ECF4;">Wat nu?</strong><br>
-        Zodra <strong style="color:#00C896;">${email}</strong> betaalt via Gumroad, stuur je dit rapport door.<br><br>
+        Zodra <strong style="color:#00C896;">${email}</strong> betaalt via Gumroad, stuur je dit rapport door.<br>
+        Voeg de cross-sell tip hierboven toe aan je e-mail.<br><br>
         <a href="mailto:${email}?subject=Jouw NPS Sentiment Rapport — Vreemde Vogel" style="color:#00C896;">Mail ${naam || email} direct →</a>
       </div>
     </div>`;
