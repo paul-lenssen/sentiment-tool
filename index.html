@@ -35,7 +35,7 @@
   .sent.positief{color:var(--green);} .sent.negatief{color:#FF5C7A;} .sent.gemengd{color:#E0A800;}
   .insight .sam{font-size:13px;color:var(--muted);line-height:1.5;}
   .upsell{background:linear-gradient(135deg,#13203F,#0E1730);border:1px solid var(--green);
-    border-radius:12px;padding:24px;text-align:center;margin-top:24px;}
+    border-radius:12px;padding:24px;text-align:center;margin-top:24px;display:none;}
   .upsell h3{font-size:16px;margin-bottom:8px;}
   .upsell p{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px;}
   .upsell a{display:inline-block;background:var(--green);color:#04110C;text-decoration:none;
@@ -44,9 +44,60 @@
   .loader{display:none;text-align:center;color:var(--muted);font-size:13px;padding:20px;}
   footer{text-align:center;font-size:11px;color:var(--muted);margin-top:40px;}
   footer a{color:var(--green);text-decoration:none;}
+
+  /* Soft gate overlay */
+  .gate-overlay{
+    display:none;position:fixed;inset:0;background:rgba(10,15,30,.88);
+    backdrop-filter:blur(6px);z-index:100;align-items:center;justify-content:center;
+  }
+  .gate-overlay.visible{display:flex;}
+  .gate-box{
+    background:var(--panel);border:1px solid var(--green);border-radius:16px;
+    padding:36px 32px;max-width:420px;width:90%;text-align:center;
+  }
+  .gate-icon{font-size:32px;margin-bottom:16px;}
+  .gate-box h2{font-size:18px;font-weight:500;margin-bottom:10px;line-height:1.4;}
+  .gate-box h2 span{color:var(--green);}
+  .gate-box p{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:24px;}
+  .gate-input{
+    width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;
+    color:var(--text);font-family:inherit;font-size:13px;padding:12px 16px;
+    margin-bottom:12px;outline:none;
+  }
+  .gate-input:focus{border-color:var(--green);}
+  .gate-submit{
+    width:100%;background:var(--green);color:#04110C;border:none;border-radius:8px;
+    padding:13px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;
+    margin-bottom:14px;margin-top:0;
+  }
+  .gate-submit:hover{opacity:.9;}
+  .gate-submit:disabled{opacity:.4;cursor:wait;}
+  .gate-skip{
+    font-size:11px;color:var(--muted);background:none;border:none;
+    cursor:pointer;font-family:inherit;text-decoration:underline;
+    text-underline-offset:3px;width:auto;margin:0;padding:0;
+  }
+  .gate-skip:hover{color:var(--text);opacity:1;}
+  .gate-error{color:#FF5C7A;font-size:12px;margin-bottom:10px;display:none;}
+  .gate-success{color:var(--green);font-size:13px;display:none;margin-bottom:12px;}
 </style>
 </head>
 <body>
+
+<!-- Soft gate overlay -->
+<div class="gate-overlay" id="gate">
+  <div class="gate-box">
+    <div class="gate-icon">📊</div>
+    <h2>Je analyse is klaar —<br><span>ontvang het rapport per mail</span></h2>
+    <p>Vul je e-mail in en we sturen je de samenvatting toe. Geen spam, geen verplichtingen.</p>
+    <div class="gate-error" id="gate-error"></div>
+    <div class="gate-success" id="gate-success">✓ Gelukt! Je ontvangt de samenvatting zo in je inbox.</div>
+    <input class="gate-input" type="email" id="gate-email" placeholder="jouw@email.nl" autocomplete="email">
+    <button class="gate-submit" id="gate-submit">Rapport ontvangen →</button>
+    <button class="gate-skip" id="gate-skip">Nee bedankt, toon alleen de resultaten</button>
+  </div>
+</div>
+
 <div class="wrap">
   <div class="logo">Vreemde Vogel</div>
   <h1>NPS Sentiment <span>Analyse</span></h1>
@@ -67,7 +118,7 @@
     <div class="panel">
       <label>Top 3 thema's in jouw antwoorden</label>
       <div id="insights"></div>
-      <div class="upsell">
+      <div class="upsell" id="upsell">
         <h3>📄 Volledig rapport nodig?</h3>
         <p>Alle thema's, representatieve citaten per thema, algemeen sentiment
         en concrete aanbevelingen — als downloadbaar rapport inclusief je data.</p>
@@ -85,46 +136,112 @@
 </div>
 
 <script>
-const btn=document.getElementById('analyze');
-const ta=document.getElementById('answers');
-const err=document.getElementById('error');
-const loader=document.getElementById('loader');
-const results=document.getElementById('results');
-const insightsEl=document.getElementById('insights');
+const btn = document.getElementById('analyze');
+const ta = document.getElementById('answers');
+const err = document.getElementById('error');
+const loader = document.getElementById('loader');
+const results = document.getElementById('results');
+const insightsEl = document.getElementById('insights');
+const gate = document.getElementById('gate');
+const upsell = document.getElementById('upsell');
 
-btn.addEventListener('click', async ()=>{
-  err.style.display='none'; results.style.display='none';
-  const answers=ta.value.trim();
-  if(answers.length<20){
-    err.textContent='Plak minimaal een paar antwoorden (20+ tekens).';
-    err.style.display='block'; return;
+let lastTeaser = []; // bewaar teaser voor de notificatiemail
+
+btn.addEventListener('click', async () => {
+  err.style.display = 'none';
+  results.style.display = 'none';
+  const answers = ta.value.trim();
+  if (answers.length < 20) {
+    err.textContent = 'Plak minimaal een paar antwoorden (20+ tekens).';
+    err.style.display = 'block';
+    return;
   }
-  btn.disabled=true; loader.style.display='block';
-  try{
-    const r=await fetch('/api/sentiment',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({answers})
+  btn.disabled = true;
+  loader.style.display = 'block';
+  try {
+    const r = await fetch('/api/sentiment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers })
     });
-    const data=await r.json();
-    if(!r.ok) throw new Error(data.error||'Er ging iets mis.');
-    insightsEl.innerHTML='';
-    (data.teaser||[]).slice(0,3).forEach(t=>{
-      const div=document.createElement('div');
-      div.className='insight';
-      div.innerHTML=`
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Er ging iets mis.');
+
+    lastTeaser = data.teaser || [];
+    insightsEl.innerHTML = '';
+    lastTeaser.slice(0, 3).forEach(t => {
+      const div = document.createElement('div');
+      div.className = 'insight';
+      div.innerHTML = `
         <div class="top"><span class="thema">${t.thema}</span>
         <span class="pct">~${t.percentage}%</span></div>
         <div class="sent ${t.sentiment}">${t.sentiment}</div>
         <div class="sam">${t.samenvatting}</div>`;
       insightsEl.appendChild(div);
     });
-    results.style.display='block';
-  }catch(e){
-    err.textContent=e.message; err.style.display='block';
-  }finally{
-    btn.disabled=false; loader.style.display='none';
+
+    results.style.display = 'block';
+
+    // Toon soft gate na korte vertraging
+    setTimeout(() => gate.classList.add('visible'), 800);
+
+  } catch (e) {
+    err.textContent = e.message;
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    loader.style.display = 'none';
   }
+});
+
+// Gate: submit → notificatiemail naar paul@
+document.getElementById('gate-submit').addEventListener('click', async () => {
+  const email = document.getElementById('gate-email').value.trim();
+  const gateErr = document.getElementById('gate-error');
+  const gateSuccess = document.getElementById('gate-success');
+  const gateSubmit = document.getElementById('gate-submit');
+
+  gateErr.style.display = 'none';
+  if (!email || !email.includes('@')) {
+    gateErr.textContent = 'Vul een geldig e-mailadres in.';
+    gateErr.style.display = 'block';
+    return;
+  }
+
+  gateSubmit.disabled = true;
+  gateSubmit.textContent = 'Bezig…';
+
+  try {
+    const r = await fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, teaser: lastTeaser })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Versturen mislukt.');
+
+    gateSuccess.style.display = 'block';
+    gateSubmit.style.display = 'none';
+    document.getElementById('gate-email').style.display = 'none';
+    document.getElementById('gate-skip').textContent = 'Sluiten';
+
+    setTimeout(() => {
+      gate.classList.remove('visible');
+      upsell.style.display = 'block';
+    }, 2000);
+
+  } catch (e) {
+    gateErr.textContent = e.message;
+    gateErr.style.display = 'block';
+    gateSubmit.disabled = false;
+    gateSubmit.textContent = 'Rapport ontvangen →';
+  }
+});
+
+// Gate: skip → direct upsell tonen
+document.getElementById('gate-skip').addEventListener('click', () => {
+  gate.classList.remove('visible');
+  upsell.style.display = 'block';
 });
 </script>
 </body>
